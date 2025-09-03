@@ -5,10 +5,10 @@ spoke_credentials_path      = "../../../G-secrets/pelagic-core-467122-q4-25d0b2a
 spoke_subnet_cidr           = "10.191.1.0/24"
 spoke_asn                   = 65001
 spoke_name                  = "spoke-a"
-spoke_statefile_bucket_name = "walid-gcs-backend2"
-gcs_bucket_name             = "walid-gcs-backend3"
+spoke_statefile_bucket_name = "walid-spoke-a-backend"
+gcs_bucket_name             = "walid-secrets-backend"
 
-hub_state_bucket_name   = "walid-gcs-backend"
+hub_state_bucket_name   = "walid-hub-backend"
 hub_prefix              = "hub-state"
 hub_service_account     = "admin-428@ncc-project-467401.iam.gserviceaccount.com"
 spoke_to_ncc_ip_range_0 = "169.254.0.2/30"
@@ -20,4 +20,6 @@ deploy_test_vm       = true
 test_vm_machine_type = "e2-micro"
 test_vm_image        = "debian-cloud/debian-11"
 
-deploy_phase2 = true
+
+deploy_phase2 = false
+deploy_phase3 = false

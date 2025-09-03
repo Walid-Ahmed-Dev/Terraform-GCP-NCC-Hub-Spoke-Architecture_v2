@@ -12,9 +12,9 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket      = "walid-gcs-backend"
+    bucket      = "walid-hub-backend"
     prefix      = "hub-state"
-    credentials = "../../../G-secrets/ncc-project-467401-210df7f1e23a.json"
+    credentials = "../../../G-secrets/ncc-project-467401-3af773551e59.json"
   }
 }
 
@@ -43,6 +43,7 @@ module "ncc_hub" {
   test_vm_image        = var.test_vm_image
 
   deploy_phase2 = var.deploy_phase2
+  deploy_phase3 = var.deploy_phase3
 
   providers = {
     google = google

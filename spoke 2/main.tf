@@ -8,9 +8,9 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket      = "walid-spoke-a-backend"
-    prefix      = "spoke-a-state"
-    credentials = "../../../G-secrets/pelagic-core-467122-q4-25d0b2aa49f2.json"
+    bucket      = "walid-spoke-b-backend"
+    prefix      = "spoke-b-state"
+    credentials = "../../../G-secrets/aws-ultramarines-466800-77ac1c30a414.json"
   }
 }
 

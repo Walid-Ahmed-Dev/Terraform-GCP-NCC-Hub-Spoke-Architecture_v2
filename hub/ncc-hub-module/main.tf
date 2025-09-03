@@ -355,6 +355,14 @@ resource "google_compute_firewall" "ncc_allow_spoke_to_spoke" {
   allow {
     protocol = "all"
   }
+# Constructs source_ranges and destination_ranges for NCC ingress firewall rule.
+# Includes:
+# - The NCC subnet CIDR (local to the NCC VPC)
+# - All spoke subnet CIDRs retrieved from remote state (via spoke_configs)
+# This ensures:
+# - NCC VMs can receive traffic from any spoke subnet
+# - Traffic can be routed through NCC to other spokes (hub-style)
+# - The rule remains dynamic and scalable across multiple spokes
   source_ranges = concat(
     [google_compute_subnetwork.ncc_subnet.ip_cidr_range],
     [for spoke in var.spoke_configs : data.terraform_remote_state.spoke[spoke.name].outputs.spoke_subnet_cidr]
@@ -363,6 +371,7 @@ resource "google_compute_firewall" "ncc_allow_spoke_to_spoke" {
     [google_compute_subnetwork.ncc_subnet.ip_cidr_range],
     [for spoke in var.spoke_configs : data.terraform_remote_state.spoke[spoke.name].outputs.spoke_subnet_cidr]
   )
+  target_tags = ["${var.prefix}-ncc-vm"]
   log_config {
     metadata = "INCLUDE_ALL_METADATA"
   }
