@@ -1,6 +1,6 @@
 # NCC Hub and Spoke Collaborative Configuration
 
-This repository provides a Terraform configuration for deploying a Google Cloud Platform (GCP) Network Connectivity Center (NCC) hub-and-spoke architecture, with separate hub and spoke projects for improved team collaboration. It builds on the proof-of-concept from [bleeng089/Armageddon_6.5_6-2025](https://github.com/bleeng089/Armageddon_6.5_6-2025), introducing a three-phase deployment process and GCS-based state management.
+This repository provides a Terraform configuration for deploying a Google Cloud Platform (GCP) Network Connectivity Center (NCC) hub-and-spoke architecture, with separate hub and spoke projects for improved team collaboration. It builds on the proof-of-concept from [Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture](https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture), introducing a three-phase deployment process and GCS-based state management.
 
 ## Structure
 - `hub/`: Contains the Terraform configuration for the NCC hub, including VPC, subnet, HA VPN Gateway, Cloud Router, and NCC hub resources. See `hub/README.md` for details.
