@@ -10,7 +10,7 @@ terraform {
   backend "gcs" {
     bucket      = "walid-spoke-a-backend"
     prefix      = "spoke-a-state"
-    credentials = "../../../G-secrets/pelagic-core-467122-q4-25d0b2aa49f2.json"
+    credentials = "../../../G-secrets/pelagic-core-467122-q4-ff9df60ae3a5.json"
   }
 }
 
@@ -22,7 +22,7 @@ provider "google" {
 
 # NCC Spoke module 
 module "ncc_spoke" {
-  source                      = "./ncc-spoke-module"
+  source                      = "./modules/ncc-spoke-module"
   prefix                      = var.prefix
   spoke_project_id            = var.spoke_project_id
   spoke_region                = var.spoke_region
@@ -49,6 +49,38 @@ module "ncc_spoke" {
   deploy_phase2 = var.deploy_phase2
   deploy_phase3 = var.deploy_phase3
 
+  providers = {
+    google = google
+  }
+}
+
+#############################
+######### TASK 3 ############
+#############################
+
+module "task3" {
+  source = "./modules/task3"
+  # Shares the same variables/tfvars input as ncc_spoke module
+  prefix           = var.prefix
+  spoke_project_id = var.spoke_project_id
+  spoke_region     = var.spoke_region
+  spoke_name       = var.spoke_name
+
+  # Pass the VPC and subnet information from NCC spoke module
+  spoke_vpc_id    = module.ncc_spoke.spoke_vpc_id
+  spoke_subnet_id = module.ncc_spoke.spoke_subnet_id
+
+  # Task 3 Overlay: Extends existing underlay with public-facing components
+  task3_private_cidr      = var.task3_private_cidr      # New private CIDR for overlay
+  windows_vm_region       = var.windows_vm_region       # Different region for public overlay
+  windows_vm_machine_type = var.windows_vm_machine_type # Windows jump server (overlay)
+  linux_vm_machine_type   = var.linux_vm_machine_type   # Linux VMs (use existing underlay)
+
+  # Group member for Linux VM customization
+  group_member = var.group_member
+
+  # Task 3 deployment control
+  deploy_task_3 = var.deploy_task_3
   providers = {
     google = google
   }

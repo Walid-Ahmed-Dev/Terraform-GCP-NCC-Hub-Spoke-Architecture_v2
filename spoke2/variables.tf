@@ -186,3 +186,41 @@ variable "deploy_phase3" {
   type        = bool
   default     = false
 }
+
+#####################################
+######### Task 3 Variables ##########
+#####################################
+variable "windows_vm_region" {
+  description = "Region for the Windows VM"
+  type        = string
+}
+
+variable "windows_vm_machine_type" {
+  description = "Machine type for Windows VM"
+  type        = string
+}
+
+variable "linux_vm_machine_type" {
+  description = "Machine type for Linux VMs"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "task3_private_cidr" {
+  description = "CIDR for Task 3 private subnet"
+  type        = string
+  default     = "10.192.3.0/24"
+}
+
+
+variable "group_member" {
+  description = "Group member"
+  type        = string
+}
+
+
+variable "deploy_task_3" {
+  description = "Whether to deploy Task 3 resources"
+  type        = bool
+  default     = false
+}
