@@ -90,7 +90,6 @@ resource "google_compute_instance" "spoke_test_vm" {
   network_interface {
     network    = google_compute_network.spoke_vpc.self_link
     subnetwork = google_compute_subnetwork.spoke_subnet.self_link
-    access_config {}
   }
   depends_on = [google_compute_subnetwork.spoke_subnet]
 }
@@ -255,13 +254,13 @@ resource "google_compute_firewall" "spoke_allow_spoke_to_spoke" {
   allow {
     protocol = "all"
   }
-# Dynamically build source_ranges and destination_ranges to allow full spoke-to-spoke traffic via NCC.
-# This logic:
-# - Includes the NCC subnet CIDR to ensure hub participation in routing
-# - Iterates over all spoke CIDRs retrieved from the hub’s remote state (all_spoke_cidrs)
-# - Includes the current spoke’s CIDR to allow symmetric ingress and egress
-# - Applies the same list to both source and destination ranges for bidirectional spoke communication
-# Ensures firewall rules are comprehensive, reproducible, and consistent across all spokes during phase 2 deployment.
+  # Dynamically build source_ranges and destination_ranges to allow full spoke-to-spoke traffic via NCC.
+  # This logic:
+  # - Includes the NCC subnet CIDR to ensure hub participation in routing
+  # - Iterates over all spoke CIDRs retrieved from the hub’s remote state (all_spoke_cidrs)
+  # - Includes the current spoke’s CIDR to allow symmetric ingress and egress
+  # - Applies the same list to both source and destination ranges for bidirectional spoke communication
+  # Ensures firewall rules are comprehensive, reproducible, and consistent across all spokes during phase 2 deployment.
   source_ranges = concat(
     [data.terraform_remote_state.hub[0].outputs.ncc_subnet_cidr],
     [for cidr in data.terraform_remote_state.hub[0].outputs.all_spoke_cidrs : cidr]
@@ -270,7 +269,7 @@ resource "google_compute_firewall" "spoke_allow_spoke_to_spoke" {
     [data.terraform_remote_state.hub[0].outputs.ncc_subnet_cidr],
     [for cidr in data.terraform_remote_state.hub[0].outputs.all_spoke_cidrs : cidr]
   )
-  target_tags   = ["${var.prefix}-spoke-${var.spoke_name}-vm"]
+  target_tags = ["${var.prefix}-spoke-${var.spoke_name}-vm"]
   log_config {
     metadata = "INCLUDE_ALL_METADATA"
   }

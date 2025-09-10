@@ -6,6 +6,7 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
 - `hub/`: Contains the Terraform configuration for the NCC hub, including VPC, subnet, HA VPN Gateway, Cloud Router, and NCC hub resources. See `hub/README.md` for details.
 - `spoke/`: Contains the Terraform configuration for a single spoke, including VPC, subnet, HA VPN Gateway, and Cloud Router. See `spoke/README.md` for details.
 - `spoke2/`: Contains the configuration for a second spoke (similar to spoke/).
+- `spoke/modules/task3/`: Module for extending spoke functionality with Windows jump boxes, Linux web servers, and internal load balancing.
 
 ## Features
 - Separate hub and spoke configurations for independent management.
@@ -13,18 +14,33 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
   - Phase 1: Core infrastructure (VPC, subnets, VPN gateways, routers)
   - Phase 2: VPN connectivity (tunnels, BGP peering, NCC spokes)
   - Phase 3: Spoke-to-spoke communication (firewall rules)
+- Optional Task 3 deployment for member-specific application scalability and public-facing components
 - GCS buckets for state management and shared secrets.
 - Support for multiple spokes via the hub's `spoke_configs` variable.
 - Dynamic firewall rules for spoke-to-spoke communication.
+    ###  *New Task 3 module*   
+    - *Adds a public subnet with a Windows jumpbox (RDP).*  
+    - *Deploys member-specific Linux VMs with custom content.*  
+    - *Uses an internal load balancer with health checks across zones.*
+    - *Enforces tag-based firewall rules (Windows → Linux).*   
+    - *Enabled via `deploy_task_3` variable with clear outputs for access.*  
 
-## Getting Started
+# Getting Started
 1. Configure the hub project in `hub/terraform.tfvars` and deploy Phase 1 (`deploy_phase2 = false`, `deploy_phase3 = false`).
 2. Configure each spoke project in `spoke/terraform.tfvars` and `spoke2/terraform.tfvars` using hub outputs and deploy Phase 1.
 3. Enable Phase 2 (`deploy_phase2 = true`) for both hub and spokes to establish VPN connectivity.
 4. Enable Phase 3 (`deploy_phase3 = true`) on the hub to generate the `all_spoke_cidrs` output.
 5. Verify the hub outputs contain all spoke CIDRs: `terraform output all_spoke_cidrs` should show `["10.191.1.0/24", "10.191.2.0/24"]`
 6. Enable Phase 3 (`deploy_phase3 = true`) on both spokes to enable spoke-to-spoke communication.
-7. Refer to `hub/README.md` and `spoke/README.md` for detailed instructions.
+7. (Optional) Enable Task 3 deployment on spokes for extended functionality:
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_3=true"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_3=true"
+   ```
+8. Refer to `hub/README.md` and `spoke/README.md` for detailed instructions.
 
 ## Overview
 
@@ -240,12 +256,24 @@ provider "google" {
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
    ```
 
+### Task 3: Extended Functionality (Optional)
+
+1. **Enable Task 3 Deployment**:
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_3=true"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_3=true"
+   ```
+
 ---
 >**Important Deployment Order**: 
 > 1. Always deploy Phase 1 first (`deploy_phase2 = false`, `deploy_phase3 = false`)
 > 2. Then deploy Phase 2 (`deploy_phase2 = true`, `deploy_phase3 = false`)  
 > 3. Then deploy Phase 3 on hub first (`deploy_phase2 = true`, `deploy_phase3 = true`) to generate `all_spoke_cidrs`
 > 4. Finally deploy Phase 3 on spokes (`deploy_phase2 = true`, `deploy_phase3 = true`) to consume the output
+> 5. Task 3 can be deployed at any time after Phase 1 is complete
 >
 > Spoke deployments depend on the hub's Phase 1 outputs, and hub Phase 2 deployment depends on spoke outputs. Phase 3 requires Phase 2 to be complete and the hub must generate outputs before spokes can consume them.
 ---
@@ -261,6 +289,7 @@ provider "google" {
 - **Phase 1**: Requires hub outputs (`ncc_subnet_cidr`, `ncc_asn`, `ncc_vpn_gateway_id`)
 - **Phase 2**: Establishes VPN connectivity to hub
 - **Phase 3**: Requires hub's `all_spoke_cidrs` output for spoke-to-spoke communication
+- **Task 3**: Requires existing spoke VPC and subnet infrastructure
 
 ## Credential Management Best Practices
 
@@ -322,7 +351,7 @@ JSON key files for hub and spoke projects.
 | deploy_phase2 | Whether to deploy phase 2 resources (VPN tunnels, etc.) | bool | false | No |
 | deploy_phase3 | Whether to deploy phase 3 outputs (all_spoke_cidrs) | bool | false | No |
 
-### Spoke
+### Spoke 
 | Variable Name | Description | Type | Default Value | Required |
 |---------------|-------------|------|---------------|----------|
 | prefix | Prefix for resource names | string | "walid" | Yes |
@@ -347,11 +376,36 @@ JSON key files for hub and spoke projects.
 | deploy_phase2 | Whether to deploy phase 2 resources | bool | false | No |
 | deploy_phase3 | Whether to deploy phase 3 resources (spoke-to-spoke) | bool | false | No |
 
+### Spoke (Task 3 module)
+| Variable Name | Description | Type | Default Value | Required |
+|---------------|-------------|------|---------------|----------|
+| deploy_task_3 | Whether to deploy Task 3 resources | bool | false | No |
+| windows_vm_region | Region for the Windows VM | string | "asia-northeast1" | No |
+| windows_vm_machine_type | Machine type for Windows VM | string | "e2-standard-4" | No |
+| linux_vm_machine_type | Machine type for Linux VMs | string | "e2-medium" | No |
+| task3_private_cidr | CIDR for Task 3 private subnet | string | "10.192.1.0/24" | No |
+| group_member | Group member for Linux VM customization | string | "walid" | No |
+### Spoke to Spoke Communication
+![Screenshot](pics/task1_1.png)
+### Task 3 in Action
+![Screenshot](pics/task3_1.png)
+![Screenshot](pics/task3_2.png)
+![Screenshot](pics/task3_3.png)
+![Screenshot](pics/task3_4.png)
 ## Destruction Workflow
 
 To safely delete the infrastructure:
 
-1. **Phase 3 Destruction**: Set `deploy_phase3 = false` on all spokes
+1. **Task 3 Destruction**: Set `deploy_task_3 = false` on all spokes
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_3=false"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_3=false"
+   ```
+
+2. **Phase 3 Destruction**: Set `deploy_phase3 = false` on all spokes
    ```bash
    cd spoke
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
@@ -360,7 +414,7 @@ To safely delete the infrastructure:
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
    ```
 
-2. **Phase 2 Destruction**: Set `deploy_phase2 = false` on hub and spokes **SIMULTANEOUSLY**
+3. **Phase 2 Destruction**: Set `deploy_phase2 = false` on hub and spokes **SIMULTANEOUSLY**
    ```bash
    # Hub and ALL spokes must run this at the same time
    cd hub
@@ -373,7 +427,7 @@ To safely delete the infrastructure:
    terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
    ```
 
-3. **Phase 1 Destruction**: Destroy all resources
+4. **Phase 1 Destruction**: Destroy all resources
    ```bash
    cd hub
    terraform destroy
@@ -390,6 +444,7 @@ To safely delete the infrastructure:
 Phase 2 and Phase 3 resources have implicit cross-project dependencies through Terraform remote state references. The hub's Phase 2 deployment depends on spoke state data, and spokes' Phase 2/3 deployments depend on hub state data. 
 
 **For Destruction:**
+- **Task 3 must be destroyed before Phase 3** across all spokes
 - **Phase 3 must be destroyed before Phase 2** across all spokes
 - **Phase 2 must be destroyed simultaneously** across hub and all spokes
 - **Phase 1 can be destroyed independently** after Phase 2 is fully removed
@@ -404,15 +459,27 @@ If you destroy Phase 1 resources before Phase 2, Terraform will be unable to pro
 ## Contributing
 Contributions are welcome! Please follow the existing conventions including lowercase naming, separate `variables.tf` and `outputs.tf`, and input validation.
 
-## Changelog
+# Changelog
 
-# v2.0.0
+## v3.0.0
+- **Added Task 3 deployment** for member-specific application scalability
+- **Extended underlay architecture** with public subnet
+- **Windows Jumpbox VM** with public RDP access and internal load balancer connectivity
+- **Member-specific Linux VMs** with personalized content and firewall tags
+- **Customized web experience** with personalized styling and content
+- **Internal Load Balancer** deployment in existing private subnet
+- **Tag-based firewall rules** for secure access control between Windows and Linux VMs
+- **Private NAT** for Linux web servers to fetch package updates
+- **Conditional deployment** controlled by `deploy_task_3` boolean variable
+- **Enhanced outputs** for easy RDP access and load balancer connectivity
+
+## v2.0.0
 - Added Phase 3 deployment for spoke-to-spoke communication
 - Implemented dynamic firewall rules using `all_spoke_cidrs` output
 - Improved dependency management and deployment sequencing
 - Enhanced documentation and destruction workflow
 
-# v1.0.0
+## v1.0.0
 - Initial release with two-phase deployment
 - Basic hub-and-spoke connectivity
-- GCS-based state management and shared secrets
+- GCS-based state management and shared secret

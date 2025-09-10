@@ -26,6 +26,6 @@ output "spoke_vpn_tunnels" {
   value = module.ncc_hub.spoke_vpn_tunnels
 }
 
-output "all_spoke_cidrs" { 
+output "all_spoke_cidrs" {
   value = module.ncc_hub.all_spoke_cidrs
 }
