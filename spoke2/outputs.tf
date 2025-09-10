@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 output "spoke_vpc_id" {
   value = module.ncc_spoke.spoke_vpc_id
 }
@@ -10,6 +11,10 @@ output "spoke_subnet_id" {
 output "spoke_subnet_cidr" {
   description = "CIDR range of the spoke subnet"
   value       = module.ncc_spoke.spoke_subnet_cidr
+=======
+output "spoke_subnet_cidr" {
+  value = module.ncc_spoke.spoke_subnet_cidr
+>>>>>>> main
 }
 
 output "spoke_asn" {
@@ -35,6 +40,7 @@ output "spoke_test_vm_self_link" {
 
 output "spoke_vpn_tunnel_ids" {
   value = module.ncc_spoke.spoke_vpn_tunnel_ids
+<<<<<<< HEAD
 }
 
 ####################################
@@ -56,3 +62,6 @@ output "internal_lb_url" {
 output "windows_vm_rdp_command" {
   value = module.task3.windows_vm_rdp_command
 }
+=======
+}
+>>>>>>> main
