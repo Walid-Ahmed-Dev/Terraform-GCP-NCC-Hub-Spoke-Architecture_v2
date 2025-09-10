@@ -51,7 +51,7 @@ output "spoke_vpn_tunnels" {
 output "all_spoke_cidrs" {
   description = "List of all spoke subnet CIDRs for phase 3 spoke-to-spoke communication"
   value = var.deploy_phase3 ? [
-    for spoke in var.spoke_configs : 
+    for spoke in var.spoke_configs :
     data.terraform_remote_state.spoke[spoke.name].outputs.spoke_subnet_cidr
   ] : []
 }

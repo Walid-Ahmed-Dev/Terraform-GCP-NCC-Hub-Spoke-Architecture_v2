@@ -14,7 +14,7 @@ terraform {
   backend "gcs" {
     bucket      = "walid-hub-backend"
     prefix      = "hub-state"
-    credentials = "../../../G-secrets/ncc-project-467401-3af773551e59.json"
+    credentials = "../../../G-secrets/ncc-project-467401-b10d53e43df4.json"
   }
 }
 
@@ -26,7 +26,7 @@ provider "google" {
 
 # NCC hub module 
 module "ncc_hub" {
-  source                        = "./ncc-hub-module"
+  source                        = "./modules/ncc-hub-module"
   prefix                        = var.prefix
   ncc_project_id                = var.ncc_project_id
   ncc_region                    = var.ncc_region

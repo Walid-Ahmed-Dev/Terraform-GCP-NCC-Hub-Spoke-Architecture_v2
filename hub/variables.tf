@@ -171,7 +171,7 @@ variable "deploy_phase3" {
   description = "Whether to prepare outputs for phase 3 spoke-to-spoke communication. Requires phase2 to be true."
   type        = bool
   default     = false
-  
+
   validation {
     condition     = var.deploy_phase3 ? var.deploy_phase2 : true
     error_message = "Phase 3 outputs require phase 2 to be deployed first. Set deploy_phase2 = true before enabling phase 3."
