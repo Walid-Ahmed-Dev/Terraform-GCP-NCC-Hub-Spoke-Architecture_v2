@@ -563,7 +563,7 @@ Contributions are welcome! Please follow the existing conventions including lowe
 
 # Changelog
 
-## v4.0.0
+## v3.1.0
 - **Added Task 2 deployment** for Cloud Run multi-revision traffic splitting
 - **Hybrid Terraform-gcloud approach** for predictable revision naming and traffic management
 - **Cost-optimized** with idle revisions scaling to zero
