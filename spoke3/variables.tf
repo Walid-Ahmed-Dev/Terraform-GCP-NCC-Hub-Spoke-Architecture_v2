@@ -181,8 +181,101 @@ variable "deploy_phase2" {
   default     = false
 }
 
+#############################
+######### Phase 3 ##########
+#############################
+
 variable "deploy_phase3" {
   description = "Whether to deploy phase 3 resources (spoke-to-spoke firewall rules). Requires phase2 to be deployed first for proper functionality."
+  type        = bool
+  default     = false
+}
+
+#####################################
+######### Task 2 Variables ##########
+#####################################
+
+variable "artifact_registry_host" {
+  description = "Artifact Registry hostname"
+  type        = string
+  default     = "asia-docker.pkg.dev"
+}
+
+variable "repository_name" {
+  description = "Artifact Registry repository name"
+  type        = string
+  default     = "cloud-run-ex"
+}
+
+variable "service_name" {
+  description = "Cloud Run service name"
+  type        = string
+  default     = "cloud-run-ex-service"
+}
+
+variable "traffic_distribution" {
+  description = "Traffic distribution across revisions"
+  type        = map(number)
+  default = {
+    main      = 40
+    revision2 = 40
+    revision3 = 10
+    revision4 = 10
+  }
+}
+
+variable "image_names" {
+  description = "Docker image names for each revision"
+  type        = map(string)
+  default = {
+    main      = "cloud-run-ex"
+    revision2 = "cloud-run-ex2"
+    revision3 = "cloud-run-ex3"
+    revision4 = "cloud-run-ex4"
+  }
+}
+
+variable "deploy_task_2" {
+  description = "Whether to deploy Task 3 resources"
+  type        = bool
+  default     = false
+}
+
+#####################################
+######### Task 3 Variables ##########
+#####################################
+
+variable "windows_vm_region" {
+  description = "Region for the Windows VM"
+  type        = string
+}
+
+variable "windows_vm_machine_type" {
+  description = "Machine type for Windows VM"
+  type        = string
+}
+
+variable "linux_vm_machine_type" {
+  description = "Machine type for Linux VMs"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "task3_private_cidr" {
+  description = "CIDR for Task 3 private subnet"
+  type        = string
+  default     = "10.192.1.0/24"
+}
+
+
+variable "group_member" {
+  description = "Group member"
+  type        = string
+}
+
+
+variable "deploy_task_3" {
+  description = "Whether to deploy Task 3 resources"
   type        = bool
   default     = false
 }

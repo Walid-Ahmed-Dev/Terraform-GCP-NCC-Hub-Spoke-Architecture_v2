@@ -343,6 +343,10 @@ resource "google_compute_firewall" "ncc_allow_vpn_bgp" {
   }
 }
 
+#############################
+######### Phase 3 ##########
+#############################
+
 # Creating firewall rule for spoke-to-spoke traffic
 resource "google_compute_firewall" "ncc_allow_spoke_to_spoke" {
   count       = var.deploy_phase3 ? 1 : 0

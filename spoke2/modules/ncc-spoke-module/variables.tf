@@ -181,6 +181,10 @@ variable "deploy_phase2" {
   default     = false
 }
 
+#############################
+######### Phase 3 ##########
+#############################
+
 variable "deploy_phase3" {
   description = "Whether to deploy phase 3 resources (spoke-to-spoke firewall rules). Requires phase2 to be deployed first for proper functionality."
   type        = bool

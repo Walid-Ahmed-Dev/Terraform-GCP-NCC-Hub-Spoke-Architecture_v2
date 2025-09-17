@@ -273,4 +273,10 @@ resource "google_compute_firewall" "spoke_allow_spoke_to_spoke" {
   log_config {
     metadata = "INCLUDE_ALL_METADATA"
   }
+  lifecycle {
+    precondition {
+      condition     = length(data.terraform_remote_state.hub[0].outputs.all_spoke_cidrs) > 0
+      error_message = "Phase 3 cannot be deployed: hub output 'all_spoke_cidrs' is missing or empty. Deploy hub phase 3"
+    }
+  }
 }

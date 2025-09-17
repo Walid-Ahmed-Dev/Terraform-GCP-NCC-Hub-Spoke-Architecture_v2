@@ -48,6 +48,11 @@ output "spoke_vpn_tunnels" {
   } : {}
   description = "Map of spoke names to their respective VPN tunnel IDs (tunnel 0 and tunnel 1), used by spokes to verify connectivity and by the hub to configure NCC spokes (google_network_connectivity_spoke.linked_vpn_tunnels.uris)."
 }
+
+#############################
+######### Phase 3 ##########
+#############################
+
 output "all_spoke_cidrs" {
   description = "List of all spoke subnet CIDRs for phase 3 spoke-to-spoke communication"
   value = var.deploy_phase3 ? [

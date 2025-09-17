@@ -6,6 +6,7 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
 - `hub/`: Contains the Terraform configuration for the NCC hub, including VPC, subnet, HA VPN Gateway, Cloud Router, and NCC hub resources. See `hub/README.md` for details.
 - `spoke/`: Contains the Terraform configuration for a single spoke, including VPC, subnet, HA VPN Gateway, and Cloud Router. See `spoke/README.md` for details.
 - `spoke2/`: Contains the configuration for a second spoke (similar to spoke/).
+- `spoke3/modules/task2/`: Module for Cloud Run multi-revision deployment with traffic splitting.
 - `spoke/modules/task3/`: Module for extending spoke functionality with Windows jump boxes, Linux web servers, and internal load balancing.
 
 ## Features
@@ -14,16 +15,68 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
   - Phase 1: Core infrastructure (VPC, subnets, VPN gateways, routers)
   - Phase 2: VPN connectivity (tunnels, BGP peering, NCC spokes)
   - Phase 3: Spoke-to-spoke communication (firewall rules)
+- Optional Task 2 deployment for Cloud Run multi-revision traffic splitting
 - Optional Task 3 deployment for member-specific application scalability and public-facing components
 - GCS buckets for state management and shared secrets.
 - Support for multiple spokes via the hub's `spoke_configs` variable.
 - Dynamic firewall rules for spoke-to-spoke communication.
-    ###  *New Task 3 module*   
-    - *Adds a public subnet with a Windows jumpbox (RDP).*  
-    - *Deploys member-specific Linux VMs with custom content.*  
-    - *Uses an internal load balancer with health checks across zones.*
-    - *Enforces tag-based firewall rules (Windows → Linux).*   
-    - *Enabled via `deploy_task_3` variable with clear outputs for access.*  
+
+## *New Task 2*   [README](./spoke3/modules/task2/README.md)
+
+### *Cloud Run Multi-Revision Deployment*
+- **Hybrid Approach**: Combines Terraform for service infrastructure and gcloud CLI for revision management and traffic splitting.
+- **Predictable Revision Naming**: Uses revision suffixes for consistent naming (e.g., `main`, `revision2`).
+- **Traffic Splitting**: Precisely controls traffic distribution across revisions (e.g., 40%/40%/10%/10%).
+- **Cost Optimized**: Idle revisions scale to zero and cost nothing when not in use.
+
+### *Architecture Design*
+- **Terraform-Managed Resources**: Cloud Run service, IAM permissions for public access.
+- **gCLI-Managed Revisions**: Deployment of multiple revisions with specific suffixes.
+- **Traffic Management**: Configuration of traffic percentages to revisions.
+
+### *Usage*
+- **Conditional Deployment**: Controlled by `deploy_task_2` variable.
+- **Service URL Output**: Provides the service URL for access after deployment.
+
+## *New Task 3*  
+
+### *Extended Underlay Architecture*
+- **Public Subnet Extension**: Creates a new public-facing subnet in a different region from the existing private infrastructure
+- **Windows Jumpbox**: Deploys a Windows Server VM with public RDP access for administrative purposes
+- **Private Infrastructure Utilization**: Leverages existing private subnet for Linux workloads
+
+### *Member-Specific Linux Environments*
+- **Individualized VMs**: Creates Linux VMs with firewall tags named after each group member
+- **Customized Web Experience**: Each VM features personalized content and styling
+
+### *Load Balancing & High Availability*
+- **Internal Load Balancer**: Deployed in existing private subnet with dedicated IP
+- **Multi-AZ Deployment**: Linux VMs distributed across multiple availability zones
+- **Health Monitoring**: Automated health checks and instance replacement
+
+### *Secure Access Control*
+- **Tag-Based Firewalling**: Uses GCP firewall tags instead of IP ranges for access control
+- **Windows → Linux Access**: Only Windows VM can access Linux VMs via specific tags
+- **Public RDP Access**: Windows VM accessible via RDP from anywhere
+- **Private NAT**: Allows Linux web servers to fetch package updates while maintaining security
+
+### *Cross-Spoke Connectivity*
+- **Hub-and-Spoke Integration**: Leverages existing NCC architecture for communication
+- **DNS Resolution**: Optional Cloud DNS setup for internal name resolution
+- **Future Expansion**: Designed to support multiple spokes with cross-communication
+
+## *Usage Workflow*
+1. **RDP Connection**: Connect to Windows VM using provided public IP
+2. **Browser Access**: Paste internal load balancer IP into browser
+3. **Load Balancing**: Automatically cycles between member Linux VMs
+4. **Custom Experience**: Each refresh shows different member's customized page
+
+## *Terraform Integration*
+- **Conditional Deployment**: Controlled by `deploy_task_2` and `deploy_task_3` boolean variables
+- **Modular Design**: Reusable across all spokes
+- **Output Visibility**: Clear outputs for easy access to IPs and connection strings
+
+*Tasks 2 and 3 extend the existing NCC hub-and-spoke architecture while meeting all specified constraints for deployment flexibility, access control, and cross-communication capabilities.*
 
 # Getting Started
 1. Configure the hub project in `hub/terraform.tfvars` and deploy Phase 1 (`deploy_phase2 = false`, `deploy_phase3 = false`).
@@ -32,7 +85,15 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
 4. Enable Phase 3 (`deploy_phase3 = true`) on the hub to generate the `all_spoke_cidrs` output.
 5. Verify the hub outputs contain all spoke CIDRs: `terraform output all_spoke_cidrs` should show `["10.191.1.0/24", "10.191.2.0/24"]`
 6. Enable Phase 3 (`deploy_phase3 = true`) on both spokes to enable spoke-to-spoke communication.
-7. (Optional) Enable Task 3 deployment on spokes for extended functionality:
+7. (Optional) Enable Task 2 deployment on spokes for Cloud Run functionality:
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_2=true"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_2=true"
+   ```
+8. (Optional) Enable Task 3 deployment on spokes for extended functionality:
    ```bash
    cd spoke
    terraform apply -var="deploy_task_3=true"
@@ -40,7 +101,7 @@ This repository provides a Terraform configuration for deploying a Google Cloud 
    cd ../spoke2
    terraform apply -var="deploy_task_3=true"
    ```
-8. Refer to `hub/README.md` and `spoke/README.md` for detailed instructions.
+9. Refer to `hub/README.md` and `spoke/README.md` for detailed instructions.
 
 ## Overview
 
@@ -256,6 +317,17 @@ provider "google" {
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
    ```
 
+### Task 2: Cloud Run Deployment (Optional)
+
+1. **Enable Task 2 Deployment**:
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_2=true"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_2=true"
+   ```
+
 ### Task 3: Extended Functionality (Optional)
 
 1. **Enable Task 3 Deployment**:
@@ -273,7 +345,7 @@ provider "google" {
 > 2. Then deploy Phase 2 (`deploy_phase2 = true`, `deploy_phase3 = false`)  
 > 3. Then deploy Phase 3 on hub first (`deploy_phase2 = true`, `deploy_phase3 = true`) to generate `all_spoke_cidrs`
 > 4. Finally deploy Phase 3 on spokes (`deploy_phase2 = true`, `deploy_phase3 = true`) to consume the output
-> 5. Task 3 can be deployed at any time after Phase 1 is complete
+> 5. Task 2 and Task 3 can be deployed at any time after Phase 1 is complete
 >
 > Spoke deployments depend on the hub's Phase 1 outputs, and hub Phase 2 deployment depends on spoke outputs. Phase 3 requires Phase 2 to be complete and the hub must generate outputs before spokes can consume them.
 ---
@@ -289,6 +361,7 @@ provider "google" {
 - **Phase 1**: Requires hub outputs (`ncc_subnet_cidr`, `ncc_asn`, `ncc_vpn_gateway_id`)
 - **Phase 2**: Establishes VPN connectivity to hub
 - **Phase 3**: Requires hub's `all_spoke_cidrs` output for spoke-to-spoke communication
+- **Task 2**: Requires Artifact Registry images to be pre-built and pushed
 - **Task 3**: Requires existing spoke VPC and subnet infrastructure
 
 ## Credential Management Best Practices
@@ -303,6 +376,7 @@ provider "google" {
 * **Terraform:** Version `>= 1.0.0` 
   * `hashicorp/google` provider, version `~> 6.0` (for managing GCP resources)
   * `hashicorp/random` provider (Hub only), version `~> 3.0` (for generating random IDs)
+  * `hashicorp/null` provider (Task 2), version `~> 3.0` (for local-exec provisioning)
 - **Google Cloud SDK**: Required for interacting with GCP APIs and managing credentials.  
 
 ### GCP Projects:
@@ -376,6 +450,18 @@ JSON key files for hub and spoke projects.
 | deploy_phase2 | Whether to deploy phase 2 resources | bool | false | No |
 | deploy_phase3 | Whether to deploy phase 3 resources (spoke-to-spoke) | bool | false | No |
 
+### Spoke (Task 2 module)
+- Refer to the [Task 2 README](./spoke3/modules/task2/README.md)
+
+| Variable Name | Description | Type | Default Value | Required |
+|---------------|-------------|------|---------------|----------|
+| deploy_task_2 | Whether to deploy Task 2 resources | bool | false | No |
+| artifact_registry_host | Artifact Registry hostname | string | "asia-docker.pkg.dev" | No |
+| repository_name | Artifact Registry repository name | string | "cloud-run-ex" | No |
+| service_name | Cloud Run service name | string | "cloud-run-ex-service" | No |
+| traffic_distribution | Traffic distribution across revisions | map(number) | { main = 40, revision2 = 40, revision3 = 10, revision4 = 10 } | No |
+| image_names | Docker image names for each revision | map(string) | { main = "cloud-run-ex", revision2 = "cloud-run-ex2", revision3 = "cloud-run-ex3", revision4 = "cloud-run-ex4" } | No |
+
 ### Spoke (Task 3 module)
 | Variable Name | Description | Type | Default Value | Required |
 |---------------|-------------|------|---------------|----------|
@@ -387,16 +473,32 @@ JSON key files for hub and spoke projects.
 | group_member | Group member for Linux VM customization | string | "walid" | No |
 ### Spoke to Spoke Communication
 ![Screenshot](pics/task1_1.png)
-### Task 3 in Action
+### Task 2 In Action
+![Screenshot](pics/task2.png)
+![Screenshot](pics/revision1.png)
+![Screenshot](pics/revision2.png)
+![Screenshot](pics/revision3.png)
+![Screenshot](pics/revision4.png)
+### Task 3 In Action
 ![Screenshot](pics/task3_1.png)
 ![Screenshot](pics/task3_2.png)
 ![Screenshot](pics/task3_3.png)
 ![Screenshot](pics/task3_4.png)
+
 ## Destruction Workflow
 
 To safely delete the infrastructure:
 
-1. **Task 3 Destruction**: Set `deploy_task_3 = false` on all spokes
+1. **Task 2 Destruction**: Set `deploy_task_2 = false` on all spokes
+   ```bash
+   cd spoke
+   terraform apply -var="deploy_task_2=false"
+   
+   cd ../spoke2
+   terraform apply -var="deploy_task_2=false"
+   ```
+
+2. **Task 3 Destruction**: Set `deploy_task_3 = false` on all spokes
    ```bash
    cd spoke
    terraform apply -var="deploy_task_3=false"
@@ -405,7 +507,7 @@ To safely delete the infrastructure:
    terraform apply -var="deploy_task_3=false"
    ```
 
-2. **Phase 3 Destruction**: Set `deploy_phase3 = false` on all spokes
+3. **Phase 3 Destruction**: Set `deploy_phase3 = false` on all spokes
    ```bash
    cd spoke
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
@@ -414,7 +516,7 @@ To safely delete the infrastructure:
    terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
    ```
 
-3. **Phase 2 Destruction**: Set `deploy_phase2 = false` on hub and spokes **SIMULTANEOUSLY**
+4. **Phase 2 Destruction**: Set `deploy_phase2 = false` on hub and spokes **SIMULTANEOUSLY**
    ```bash
    # Hub and ALL spokes must run this at the same time
    cd hub
@@ -427,7 +529,7 @@ To safely delete the infrastructure:
    terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
    ```
 
-4. **Phase 1 Destruction**: Destroy all resources
+5. **Phase 1 Destruction**: Destroy all resources
    ```bash
    cd hub
    terraform destroy
@@ -444,7 +546,7 @@ To safely delete the infrastructure:
 Phase 2 and Phase 3 resources have implicit cross-project dependencies through Terraform remote state references. The hub's Phase 2 deployment depends on spoke state data, and spokes' Phase 2/3 deployments depend on hub state data. 
 
 **For Destruction:**
-- **Task 3 must be destroyed before Phase 3** across all spokes
+- **Task 2 and Task 3 must be destroyed before Phase 3** across all spokes
 - **Phase 3 must be destroyed before Phase 2** across all spokes
 - **Phase 2 must be destroyed simultaneously** across hub and all spokes
 - **Phase 1 can be destroyed independently** after Phase 2 is fully removed
@@ -460,6 +562,13 @@ If you destroy Phase 1 resources before Phase 2, Terraform will be unable to pro
 Contributions are welcome! Please follow the existing conventions including lowercase naming, separate `variables.tf` and `outputs.tf`, and input validation.
 
 # Changelog
+
+## v4.0.0
+- **Added Task 2 deployment** for Cloud Run multi-revision traffic splitting
+- **Hybrid Terraform-gcloud approach** for predictable revision naming and traffic management
+- **Cost-optimized** with idle revisions scaling to zero
+- **Conditional deployment** controlled by `deploy_task_2` variable
+- **Implemented validation** in the Phase 3 spoke resource to ensure users deploy the necessary hub dependencies
 
 ## v3.0.0
 - **Added Task 3 deployment** for member-specific application scalability
@@ -483,3 +592,6 @@ Contributions are welcome! Please follow the existing conventions including lowe
 - Initial release with two-phase deployment
 - Basic hub-and-spoke connectivity
 - GCS-based state management and shared secret
+
+---
+

@@ -27,6 +27,16 @@ spoke_configs = [
     spoke_to_ncc_peer_ip_0      = "169.254.2.2"
     ncc_to_spoke_ip_range_1     = "169.254.3.1/30"
     spoke_to_ncc_peer_ip_1      = "169.254.3.2"
+  },
+  {
+    name                        = "spoke-c"
+    spoke_statefile_bucket_name = "walid-spoke-c-backend"
+    spoke_state_prefix          = "spoke-c-state"
+    service_account             = "371761623939-compute@developer.gserviceaccount.com"
+    ncc_to_spoke_ip_range_0     = "169.254.4.1/30"
+    spoke_to_ncc_peer_ip_0      = "169.254.4.2"
+    ncc_to_spoke_ip_range_1     = "169.254.5.1/30"
+    spoke_to_ncc_peer_ip_1      = "169.254.5.2"
   }
 ]
 deploy_test_vm       = true

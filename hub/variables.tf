@@ -83,6 +83,10 @@ variable "gcs_bucket_name" {
   }
 }
 
+#############################
+######### Phase 2 ##########
+#############################
+
 # List of spoke configurations for IAM and VPN connectivity
 variable "spoke_configs" {
   description = "List of spoke configurations for IAM in Phase 1 (service_account) and VPN connectivity in Phase 2 (IP ranges and peer IPs)"
@@ -108,12 +112,6 @@ variable "spoke_configs" {
       for spoke in var.spoke_configs : can(regex("^[a-z0-9][a-z0-9-_.]{1,220}[a-z0-9]$", spoke.spoke_statefile_bucket_name))
     ])
     error_message = "Each spoke state bucket name must be 3-222 characters, start and end with a letter or number, and contain only lowercase letters, numbers, hyphens, underscores, or periods."
-  }
-  validation {
-    condition = alltrue([
-      for spoke in var.spoke_configs : can(regex("^[a-z0-9-._]+@[a-z0-9-._]+\\.iam\\.gserviceaccount\\.com$", spoke.service_account))
-    ])
-    error_message = "Each spoke service account must be a valid GCP service account email."
   }
   validation {
     condition = alltrue([
@@ -167,6 +165,11 @@ variable "deploy_phase2" {
   type        = bool
   default     = false
 }
+
+#############################
+######### Phase 3 ##########
+#############################
+
 variable "deploy_phase3" {
   description = "Whether to prepare outputs for phase 3 spoke-to-spoke communication. Requires phase2 to be true."
   type        = bool
