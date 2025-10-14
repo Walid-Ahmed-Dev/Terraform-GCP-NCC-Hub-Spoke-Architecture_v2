@@ -12,15 +12,32 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket      = "walid-hub-backend"
-    prefix      = "hub-state"
+    bucket = "walid-hub-backend"
+    prefix = "hub-state"
+    # SECURITY NOTE: Credentials are stored OUTSIDE the project directory (../../../G-secrets/)
+    # This is an intentional design choice for development workflow simplicity.
+    # The path references a directory 3 levels up from the project root, ensuring credentials
+    # are physically separated from the Git repository even if .gitignore fails.
+    #
+    # For production environments, consider:
+    # - Workload Identity Federation (no credentials needed)
+    # - Environment variables: export GOOGLE_APPLICATION_CREDENTIALS="/path/to/key.json"
+    # - Secret management services (Google Secret Manager, HashiCorp Vault)
+    #
+    # If you fork this project:
+    # 1. Store YOUR credentials outside your project directory
+    # 2. Update this path to match your credentials location
+    # 3. Verify .gitignore excludes your credentials path
+    # 4. Never commit credentials to version control
     credentials = "../../../G-secrets/ncc-project-467401-b10d53e43df4.json"
   }
 }
 
 provider "google" {
-  project     = var.ncc_project_id
-  region      = var.ncc_region
+  project = var.ncc_project_id
+  region  = var.ncc_region
+  # SECURITY NOTE: Credentials path references location OUTSIDE project directory
+  # See SECURITY.md for explanation of this design pattern and production alternatives
   credentials = var.ncc_credentials_path
 }
 

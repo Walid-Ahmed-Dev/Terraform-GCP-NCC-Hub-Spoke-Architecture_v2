@@ -8,15 +8,20 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket      = "walid-spoke-b-backend"
-    prefix      = "spoke-b-state"
+    bucket = "walid-spoke-b-backend"
+    prefix = "spoke-b-state"
+    # SECURITY NOTE: Credentials stored outside project directory for security isolation.
+    # This path references ../../../G-secrets/ which is physically outside the Git repository.
+    # See SECURITY.md for full explanation and production alternatives.
+    # If forking: Update this path to YOUR credentials location and ensure .gitignore excludes it.
     credentials = "../../../G-secrets/aws-ultramarines-466800-84014e9e5c33.json"
   }
 }
 
 provider "google" {
-  project     = var.spoke_project_id
-  region      = var.spoke_region
+  project = var.spoke_project_id
+  region  = var.spoke_region
+  # SECURITY NOTE: Credentials path references location outside project. See SECURITY.md.
   credentials = var.spoke_credentials_path
 }
 

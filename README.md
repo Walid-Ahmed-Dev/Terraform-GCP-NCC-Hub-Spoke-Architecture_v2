@@ -1,412 +1,443 @@
-# NCC Hub and Spoke Collaborative Configuration
+# GCP Network Connectivity Center (NCC) Hub-and-Spoke Architecture
 
-This repository provides a Terraform configuration for deploying a Google Cloud Platform (GCP) Network Connectivity Center (NCC) hub-and-spoke architecture, with separate hub and spoke projects for improved team collaboration. It builds on the proof-of-concept from [Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture](https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture), introducing a three-phase deployment process and GCS-based state management.
+[![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A5%201.0.0-623CE4?logo=terraform)](https://www.terraform.io/)
+[![GCP](https://img.shields.io/badge/GCP-Network_Connectivity_Center-4285F4?logo=google-cloud)](https://cloud.google.com/network-connectivity/docs/network-connectivity-center)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Structure
-- `hub/`: Contains the Terraform configuration for the NCC hub, including VPC, subnet, HA VPN Gateway, Cloud Router, and NCC hub resources. See `hub/README.md` for details.
-- `spoke/`: Contains the Terraform configuration for a single spoke, including VPC, subnet, HA VPN Gateway, and Cloud Router. See `spoke/README.md` for details.
-- `spoke2/`: Contains the configuration for a second spoke (similar to spoke/).
-- `spoke3/modules/task2/`: Module for Cloud Run multi-revision deployment with traffic splitting.
-- `spoke/modules/task3/`: Module for extending spoke functionality with Windows jump boxes, Linux web servers, and internal load balancing.
+**Enterprise-grade, production-ready Infrastructure as Code for GCP Network Connectivity Center deployments**
 
-## Features
-- Separate hub and spoke configurations for independent management.
-- Three-phase deployment: 
-  - Phase 1: Core infrastructure (VPC, subnets, VPN gateways, routers)
-  - Phase 2: VPN connectivity (tunnels, BGP peering, NCC spokes)
-  - Phase 3: Spoke-to-spoke communication (firewall rules)
-- Optional Task 2 deployment for Cloud Run multi-revision traffic splitting
-- Optional Task 3 deployment for member-specific application scalability and public-facing components
-- GCS buckets for state management and shared secrets.
-- Support for multiple spokes via the hub's `spoke_configs` variable.
-- Dynamic firewall rules for spoke-to-spoke communication.
+This repository provides a comprehensive Terraform configuration for deploying a Google Cloud Platform (GCP) Network Connectivity Center (NCC) hub-and-spoke architecture with multi-project support, phased deployment strategy, and optional Cloud Run and extended compute capabilities. It builds on the proof-of-concept from [Terraform-GCP-NCC-Hub-Spoke-Architecture (v1)](https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture), introducing enhanced features for production environments.
 
-## *New Task 2*   [README](./spoke3/modules/task2/README.md)
+## Quick Links
 
-### *Cloud Run Multi-Revision Deployment*
-- **Hybrid Approach**: Combines Terraform for service infrastructure and gcloud CLI for revision management and traffic splitting.
-- **Predictable Revision Naming**: Uses revision suffixes for consistent naming (e.g., `main`, `revision2`).
-- **Traffic Splitting**: Precisely controls traffic distribution across revisions (e.g., 40%/40%/10%/10%).
-- **Cost Optimized**: Idle revisions scale to zero and cost nothing when not in use.
+- **[Architecture Documentation](ARCHITECTURE.md)** - Detailed technical architecture and design decisions
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Step-by-step deployment instructions with troubleshooting
+- **[Security Considerations](SECURITY.md)** - Credential management patterns and security best practices
+- **[Hub Configuration](hub/README.md)** - Hub-specific configuration and usage
+- **[Spoke Configuration](spoke/README.md)** - Spoke-specific configuration and usage
+- **[Task 2: Cloud Run](spoke3/modules/task2/README.md)** - Multi-revision Cloud Run deployment
+- **[Task 3: Extended Infrastructure](spoke/modules/task3/README.md)** - Windows jump box and Linux web servers
 
-### *Architecture Design*
-- **Terraform-Managed Resources**: Cloud Run service, IAM permissions for public access.
-- **gCLI-Managed Revisions**: Deployment of multiple revisions with specific suffixes.
-- **Traffic Management**: Configuration of traffic percentages to revisions.
+## Table of Contents
 
-### *Usage*
-- **Conditional Deployment**: Controlled by `deploy_task_2` variable.
-- **Service URL Output**: Provides the service URL for access after deployment.
+- [Overview](#overview)
+- [Architecture Highlights](#architecture-highlights)
+- [Project Structure](#project-structure)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Deployment Phases](#deployment-phases)
+- [Optional Components](#optional-components)
+- [Screenshots](#screenshots)
+- [Technical Specifications](#technical-specifications)
+- [Contributing](#contributing)
+- [License](#license)
 
-## *New Task 3*  
-
-### *Extended Underlay Architecture*
-- **Public Subnet Extension**: Creates a new public-facing subnet in a different region from the existing private infrastructure
-- **Windows Jumpbox**: Deploys a Windows Server VM with public RDP access for administrative purposes
-- **Private Infrastructure Utilization**: Leverages existing private subnet for Linux workloads
-
-### *Member-Specific Linux Environments*
-- **Individualized VMs**: Creates Linux VMs with firewall tags named after each group member
-- **Customized Web Experience**: Each VM features personalized content and styling
-
-### *Load Balancing & High Availability*
-- **Internal Load Balancer**: Deployed in existing private subnet with dedicated IP
-- **Multi-AZ Deployment**: Linux VMs distributed across multiple availability zones
-- **Health Monitoring**: Automated health checks and instance replacement
-
-### *Secure Access Control*
-- **Tag-Based Firewalling**: Uses GCP firewall tags instead of IP ranges for access control
-- **Windows → Linux Access**: Only Windows VM can access Linux VMs via specific tags
-- **Public RDP Access**: Windows VM accessible via RDP from anywhere
-- **Private NAT**: Allows Linux web servers to fetch package updates while maintaining security
-
-### *Cross-Spoke Connectivity*
-- **Hub-and-Spoke Integration**: Leverages existing NCC architecture for communication
-- **DNS Resolution**: Optional Cloud DNS setup for internal name resolution
-- **Future Expansion**: Designed to support multiple spokes with cross-communication
-
-## *Usage Workflow*
-1. **RDP Connection**: Connect to Windows VM using provided public IP
-2. **Browser Access**: Paste internal load balancer IP into browser
-3. **Load Balancing**: Automatically cycles between member Linux VMs
-4. **Custom Experience**: Each refresh shows different member's customized page
-
-## *Terraform Integration*
-- **Conditional Deployment**: Controlled by `deploy_task_2` and `deploy_task_3` boolean variables
-- **Modular Design**: Reusable across all spokes
-- **Output Visibility**: Clear outputs for easy access to IPs and connection strings
-
-*Tasks 2 and 3 extend the existing NCC hub-and-spoke architecture while meeting all specified constraints for deployment flexibility, access control, and cross-communication capabilities.*
-
-# Getting Started
-1. Configure the hub project in `hub/terraform.tfvars` and deploy Phase 1 (`deploy_phase2 = false`, `deploy_phase3 = false`).
-2. Configure each spoke project in `spoke/terraform.tfvars` and `spoke2/terraform.tfvars` using hub outputs and deploy Phase 1.
-3. Enable Phase 2 (`deploy_phase2 = true`) for both hub and spokes to establish VPN connectivity.
-4. Enable Phase 3 (`deploy_phase3 = true`) on the hub to generate the `all_spoke_cidrs` output.
-5. Verify the hub outputs contain all spoke CIDRs: `terraform output all_spoke_cidrs` should show `["10.191.1.0/24", "10.191.2.0/24"]`
-6. Enable Phase 3 (`deploy_phase3 = true`) on both spokes to enable spoke-to-spoke communication.
-7. (Optional) Enable Task 2 deployment on spokes for Cloud Run functionality:
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_task_2=true"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_task_2=true"
-   ```
-8. (Optional) Enable Task 3 deployment on spokes for extended functionality:
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_task_3=true"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_task_3=true"
-   ```
-9. Refer to `hub/README.md` and `spoke/README.md` for detailed instructions.
+---
 
 ## Overview
 
-The hub-and-spoke model centralizes network management in the hub, which facilitates connectivity to one or more spoke projects. The hub includes a VPC, subnet, HA VPN Gateway, Cloud Router, and Network Connectivity Center (NCC) hub. Each spoke has its own VPC, subnet, HA VPN Gateway, and Cloud Router, connected to the hub via VPN tunnels and NCC spokes. A shared Google Cloud Storage (GCS) bucket stores secrets for secure communication.
+This project implements a **production-grade, scalable network architecture** on Google Cloud Platform using Network Connectivity Center (NCC) to establish secure, encrypted connectivity between multiple GCP projects. The architecture supports:
 
-## Hub and Spoke Architecture
+- **Multi-region deployments** with centralized hub management
+- **Automatic route propagation** via BGP
+- **High-availability VPN tunnels** with 99.99% SLA
+- **Dynamic spoke-to-spoke communication** without manual route management
+- **Flexible workload deployment** including Cloud Run and Windows/Linux VMs
+- **State management isolation** using GCS backends
+
+### Architecture Highlights
+
 ```
-                         +---------------------------------+
-                         |          NCC Hub Project        |
-                         |                                 |
-                         |  +--------------------------+   |
-                         |  |        NCC Hub VPC       |   |
-                         |  |                          |   |
-                         |  |  +-------------------+   |   |
-                         |  |  |  NCC Hub Subnet   |   |   |
-                         |  |  +-------------------+   |   |
-                         |  |                          |   |
-                         |  |  +-------------------+   |   |
-                         |  |  | HA VPN Gateway     |   |   |
-                         |  |  +-------------------+   |   |
-                         |  |                          |   |
-                         |  |  +-------------------+   |   |
-                         |  |  |  Cloud Router      |   |   |
-                         |  |  +-------------------+   |   |
-                         |  |                          |   |
-                         |  |  +-------------------+   |   |
-                         |  |  |  NCC Hub          |   |   |
-                         |  |  +-------------------+   |   |
-                         |  +--------------------------+   |
-                         |                                 |
-                         |  +-------------------+         |
-                         |  |  GCS Bucket       |         |
-                         |  | (Shared Secrets)  |         |
-                         |  +-------------------+         |
-                         +---------------------------------+
-                                  |          |
-                                  | VPN      | VPN
-                                  | Tunnels  | Tunnels
-                                  |          |
-                 +----------------+          +----------------+
-                 |                                   |
-     +-----------------------+            +-----------------------+
-     |   Spoke A Project     |            |   Spoke B Project     |
-     |                       |            |                       |
-     |  +-----------------+  |            |  +-----------------+  |
-     |  | Spoke A VPC     |  |            |  | Spoke B VPC     |  |
-     |  |                 |  |            |  |                 |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  |  |  Subnet   |  |  |            |  |  |  Subnet   |  |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  |                 |  |            |  |                 |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  |  | HA VPN    |  |  |            |  |  | HA VPN    |  |  |
-     |  |  | Gateway   |  |  |            |  |  | Gateway   |  |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  |                 |  |            |  |                 |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  |  | Cloud     |  |  |            |  |  | Cloud     |  |  |
-     |  |  | Router    |  |  |            |  |  | Router    |  |  |
-     |  |  +-----------+  |  |            |  |  +-----------+  |  |
-     |  +-----------------+  |            |  +-----------------+  |
-     +-----------------------+            +-----------------------+
+                         Cloud Network Connectivity Center
+                                      │
+                         ┌────────────┴────────────┐
+                         │      Hub Project         │
+                         │   (Central Management)   │
+                         └────────────┬────────────┘
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    │                 │                 │
+              ┌─────▼─────┐     ┌────▼─────┐     ┌────▼─────┐
+              │  Spoke A   │     │ Spoke B  │     │ Spoke C  │
+              │  Project   │     │ Project  │     │ Project  │
+              │            │◄────┤          ├────►│          │
+              └────────────┘     └──────────┘     └──────────┘
+                   Spoke-to-Spoke Communication (Phase 3)
 ```
 
-## Service Account Requirements
+**Key Benefits:**
+- Centralized network policy management
+- Seamless cross-project connectivity
+- Automated route learning and propagation
+- No complex VPN mesh topologies required
+- Support for hybrid and multi-cloud extensions
 
-### Hub Project Service Accounts
+---
 
-**Hub Service Account** (`var.ncc_hub_service_account`):
-- **Required Roles in Hub Project**:
-  - `roles/compute.networkAdmin` - For VPC, subnet, VPN gateway, and firewall management
-  - `roles/networkconnectivity.hubAdmin` - For NCC hub administration
-  - `roles/storage.admin` - For GCS bucket creation and management
+## Project Structure
 
-**Spoke Service Accounts Access in Hub Project**:
-Each spoke service account (from `var.spoke_configs`) requires:
-- `roles/compute.networkUser` - For network resource access
-- `roles/networkconnectivity.spokeAdmin` - For NCC spoke administration
-- `roles/storage.objectViewer` - For reading shared secrets from GCS
-- `roles/storage.objectAdmin` - For accessing hub state files
-
-### Spoke Project Service Accounts
-
-**Spoke Service Account** (created in spoke project):
-- **Required Roles in Spoke Project**:
-  - `roles/compute.networkAdmin` - For VPC, subnet, VPN gateway management
-  - `roles/storage.admin` - For GCS bucket access
-
-**Hub Service Account Access in Spoke Project**:
-The hub service account requires:
-- `roles/compute.networkUser` - For accessing spoke network resources
-- `roles/storage.objectViewer` - For reading spoke state files
-
-## GCS Bucket Requirements
-
-### State Management Buckets
-
-1. **Hub State Bucket** (`walid-hub-backend`):
-   - Stores hub Terraform state with prefix `hub-state`
-   - Requires read/write access for hub service account
-   - Requires read access for spoke service accounts
-
-2. **Spoke State Buckets** (`walid-spoke-a-backend`, `walid-spoke-b-backend`):
-   - Stores spoke Terraform state with prefixes `spoke-a-state`, `spoke-b-state`
-   - Requires read/write access for spoke service accounts
-   - Requires read access for hub service account
-
-### Shared Secrets Bucket
-
-3. **Shared Secrets Bucket** (`walid-secrets-backend`):
-   - Stores VPN shared secrets and configuration data
-   - Requires write access for hub service account
-   - Requires read access for spoke service accounts
-
-## Service Account Key Requirements
-
-### Terraform Provider Credentials
-
-**Hub Deployment**:
-```hcl
-provider "google" {
-  project     = var.ncc_project_id
-  region      = var.ncc_region
-  credentials = file(var.ncc_credentials_path)  # Hub service account key
-  alias       = "ncc_hub"
-}
+```
+Terraform-GCP-NCC-Hub-Spoke-Architecture_v2/
+├── ARCHITECTURE.md              # Detailed architecture documentation
+├── DEPLOYMENT_GUIDE.md          # Step-by-step deployment instructions
+├── README.md                    # This file
+├── LICENSE                      # MIT License
+├── pics/                        # Architecture diagrams and screenshots
+│   ├── task1_1.png             # Spoke-to-spoke communication
+│   ├── task2.png               # Cloud Run deployment
+│   ├── revision1-4.png         # Cloud Run revisions
+│   └── task3_1-4.png           # Extended infrastructure
+├── hub/                         # Hub Terraform configuration
+│   ├── main.tf                 # Hub module instantiation
+│   ├── variables.tf            # Hub input variables
+│   ├── outputs.tf              # Hub outputs
+│   ├── terraform.tfvars        # Hub configuration values
+│   ├── README.md               # Hub-specific documentation
+│   └── modules/
+│       └── ncc-hub-module/     # Reusable hub module
+│           ├── main.tf         # VPC, VPN, NCC hub, IAM
+│           ├── variables.tf    # Module variables
+│           └── outputs.tf      # Module outputs
+├── spoke/                       # Spoke A Terraform configuration
+│   ├── main.tf                 # Spoke module instantiation
+│   ├── variables.tf            # Spoke input variables
+│   ├── outputs.tf              # Spoke outputs
+│   ├── terraform.tfvars        # Spoke A configuration values
+│   ├── README.md               # Spoke-specific documentation
+│   └── modules/
+│       ├── ncc-spoke-module/   # Reusable spoke module
+│       │   ├── main.tf         # VPC, VPN, BGP, firewall
+│       │   ├── variables.tf    # Module variables
+│       │   └── outputs.tf      # Module outputs
+│       └── task3/              # Extended infrastructure module
+│           ├── main.tf         # Windows VM, Linux VMs, LB
+│           ├── variables.tf    # Task 3 variables
+│           ├── outputs.tf      # Task 3 outputs
+│           └── README.md       # Task 3 documentation
+├── spoke2/                      # Spoke B (similar to spoke/)
+└── spoke3/                      # Spoke C (includes Task 2)
+    └── modules/
+        └── task2/              # Cloud Run module
+            ├── main.tf         # Cloud Run service
+            ├── variables.tf    # Task 2 variables
+            ├── outputs.tf      # Task 2 outputs
+            └── README.md       # Task 2 documentation
 ```
 
-**Spoke Deployment**:
-```hcl
-provider "google" {
-  project     = var.spoke_project_id
-  region      = var.spoke_region
-  credentials = file(var.spoke_credentials_path)  # Spoke service account key
-}
+---
+
+## Key Features
+
+### Core Architecture
+
+- **Separate Hub and Spoke Management**: Independent Terraform configurations enable team autonomy
+- **Three-Phase Deployment Strategy**: Ensures proper dependency resolution and predictable rollout
+  - **Phase 1**: Core infrastructure (VPCs, subnets, VPN gateways, routers)
+  - **Phase 2**: VPN connectivity (tunnels, BGP peering, NCC spokes)
+  - **Phase 3**: Spoke-to-spoke communication (dynamic firewall rules)
+- **GCS-Based State Management**: Separate state files with locking and versioning
+- **Multi-Spoke Support**: Dynamically scale to any number of spokes via `spoke_configs`
+- **High Availability**: Dual VPN tunnels per spoke with automatic failover
+
+### Security & Compliance
+
+- **Defense in Depth**: Multiple security layers (IAM, firewall rules, private subnets)
+- **Least Privilege IAM**: Granular service account permissions
+- **Encrypted VPN Tunnels**: IKEv2 with AES-256-GCM encryption
+- **Tag-Based Firewall Rules**: Flexible access control without IP dependencies
+- **Credential Isolation**: Intentional design pattern storing credentials outside project directory
+- **Audit Logging**: Full visibility into all network operations
+
+> **Note on Credentials**: This project uses relative paths to credentials stored outside the project directory (e.g., `../../../G-secrets/`). This is an intentional design choice prioritizing development workflow simplicity while maintaining security through physical separation. See [SECURITY.md](SECURITY.md) for full explanation and production alternatives.
+
+### Optional Extensions
+
+#### Task 2: Cloud Run Multi-Revision Deployment
+- **Hybrid Terraform + gcloud CLI** approach for predictable revision naming
+- **Traffic Splitting**: Precise percentage-based routing (e.g., 40%/40%/10%/10%)
+- **Cost Optimized**: Idle revisions scale to zero (pay only for requests)
+- **Blue-Green Deployments**: Support for canary releases and A/B testing
+
+#### Task 3: Extended Spoke Infrastructure
+- **Windows Jump Box**: Public RDP access for administrative purposes
+- **Linux Web Servers**: Member-specific VMs with personalized content
+- **Internal Load Balancer**: High-availability distribution across multiple zones
+- **Private NAT**: Secure outbound internet access for package updates
+- **Tag-Based Access Control**: Windows → Linux communication via firewall tags
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Terraform >= 1.0.0
+- Google Cloud SDK (`gcloud`)
+- At least 2 GCP projects with billing enabled
+- Service accounts with appropriate IAM roles
+
+### 5-Minute Deployment (Phase 1)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture_v2.git
+cd Terraform-GCP-NCC-Hub-Spoke-Architecture_v2
+
+# 2. Configure hub
+cd hub
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your project details
+terraform init
+terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
+
+# 3. Configure spoke
+cd ../spoke
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your project details
+terraform init
+terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
+
+# 4. Enable VPN connectivity (Phase 2)
+cd ../hub
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
+
+cd ../spoke
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
+
+# 5. Enable spoke-to-spoke communication (Phase 3)
+cd ../hub
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
+
+cd ../spoke
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
 ```
 
-### Required Service Account Keys
+For detailed setup instructions, see the **[Deployment Guide](DEPLOYMENT_GUIDE.md)**.
 
-1. **Hub Service Account Key**:
-   - Path: `var.ncc_credentials_path` (e.g., `../../../G-secrets/ncc-project-467401-3af773551e59.json`)
-   - Used by: Hub Terraform provider
-   - Permissions: Full access to hub project resources
+---
 
-2. **Spoke Service Account Keys**:
-   - Path: `var.spoke_credentials_path` (e.g., `../../../G-secrets/pelagic-core-467122-q4-25d0b2aa49f2.json`)
-   - Used by: Spoke Terraform providers
-   - Permissions: Full access to spoke project resources
-  
-## Deployment Workflow
+## Deployment Phases
 
 ### Phase 1: Core Infrastructure
 
-1. **Create Service Accounts**:
-   - Create hub service account in hub project with required roles
-   - Create spoke service accounts in spoke projects with required roles
-   - Generate and download JSON keys for all service accounts
+**Deploy foundational network resources without connectivity**
 
-2. **Configure GCS Buckets**:
-   - Create state buckets for hub and spoke projects
-   - Create shared secrets bucket
-   - Configure appropriate IAM permissions
+- VPC networks and subnets
+- HA VPN gateways (dual interfaces per spoke)
+- Cloud Routers with BGP configuration
+- NCC Hub resource
+- IAM roles and permissions
+- GCS buckets for state and secrets
+- Optional test VMs
 
-3. **Deploy Hub (Phase 1)**:
-   ```bash
-   cd hub
-   terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
-   ```
-
-4. **Deploy Spokes (Phase 1)**:
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
-   ```
+**Command:**
+```bash
+terraform apply -var="deploy_phase2=false" -var="deploy_phase3=false"
+```
 
 ### Phase 2: VPN Connectivity
 
-1. **Enable Phase 2 Deployment**:
-   ```bash
-   # Hub
-   cd hub
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
-   
-   # Spokes
-   cd spoke
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
-   ```
+**Establish encrypted tunnels and BGP peering**
+
+- VPN tunnels (2 per spoke for HA)
+- BGP sessions with automatic route exchange
+- NCC spoke resources linking tunnels to hub
+- Firewall rules for VPN traffic (ESP, IKE, NAT-T, BGP)
+- Pre-shared secret management via GCS
+
+**Command:**
+```bash
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=false"
+```
+
+**Verification:**
+```bash
+# Check VPN tunnel status (should be "Established")
+gcloud compute vpn-tunnels list --project=<PROJECT_ID>
+
+# Check BGP sessions (should be "BGP_SESSION_UP")
+gcloud compute routers get-status <ROUTER_NAME> \
+  --region=<REGION> \
+  --project=<PROJECT_ID>
+```
 
 ### Phase 3: Spoke-to-Spoke Communication
 
-1. **Enable Phase 3 on Hub** (generates all_spoke_cidrs output):
-   ```bash
-   cd hub
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
-   
-   # Verify the output contains all spoke CIDRs
-   terraform output all_spoke_cidrs
-   # Should show: ["10.191.1.0/24", "10.191.2.0/24"]
-   ```
+**Enable direct communication between spokes**
 
-2. **Enable Phase 3 on Spokes** (consumes all_spoke_cidrs for firewall rules):
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
-   ```
+- Hub aggregates all spoke CIDRs
+- Dynamic firewall rules created in each spoke
+- Bidirectional spoke-to-spoke traffic allowed
+- Routes learned via BGP enable seamless communication
 
-### Task 2: Cloud Run Deployment (Optional)
+**Command:**
+```bash
+# Hub must be deployed first to generate all_spoke_cidrs
+terraform apply -var="deploy_phase2=true" -var="deploy_phase3=true"
+```
 
-1. **Enable Task 2 Deployment**:
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_task_2=true"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_task_2=true"
-   ```
-
-### Task 3: Extended Functionality (Optional)
-
-1. **Enable Task 3 Deployment**:
-   ```bash
-   cd spoke
-   terraform apply -var="deploy_task_3=true"
-   
-   cd ../spoke2
-   terraform apply -var="deploy_task_3=true"
-   ```
+**Verification:**
+```bash
+# Test spoke-to-spoke connectivity
+gcloud compute ssh <SPOKE_A_VM> \
+  --tunnel-through-iap \
+  --command="ping -c 4 <SPOKE_B_IP>"
+```
 
 ---
->**Important Deployment Order**: 
-> 1. Always deploy Phase 1 first (`deploy_phase2 = false`, `deploy_phase3 = false`)
-> 2. Then deploy Phase 2 (`deploy_phase2 = true`, `deploy_phase3 = false`)  
-> 3. Then deploy Phase 3 on hub first (`deploy_phase2 = true`, `deploy_phase3 = true`) to generate `all_spoke_cidrs`
-> 4. Finally deploy Phase 3 on spokes (`deploy_phase2 = true`, `deploy_phase3 = true`) to consume the output
-> 5. Task 2 and Task 3 can be deployed at any time after Phase 1 is complete
->
-> Spoke deployments depend on the hub's Phase 1 outputs, and hub Phase 2 deployment depends on spoke outputs. Phase 3 requires Phase 2 to be complete and the hub must generate outputs before spokes can consume them.
+
+## Optional Components
+
+### Task 2: Cloud Run Multi-Revision Deployment
+
+**Hybrid Terraform + gcloud CLI approach for production-grade Cloud Run deployments**
+
+**Features:**
+- Predictable revision naming (`service-main`, `service-revision2`, etc.)
+- Percentage-based traffic splitting (40%/40%/10%/10%)
+- Cost optimization with scale-to-zero for idle revisions
+- Blue-green deployments and canary releases
+- A/B testing capabilities
+
+**Deployment:**
+```bash
+cd spoke3
+terraform apply -var="deploy_task_2=true"
+```
+
+**Use Cases:**
+- Multi-version API deployments
+- Feature flag testing
+- Gradual rollouts
+- Zero-downtime updates
+
+See **[Task 2 Documentation](spoke3/modules/task2/README.md)** for detailed instructions.
+
+### Task 3: Extended Spoke Infrastructure
+
+**Enterprise workload deployment with Windows jump boxes and load-balanced Linux servers**
+
+**Components:**
+- **Windows Jump Box**: Public RDP access in asia-northeast1
+- **Linux Web Servers**: Member-specific VMs with custom content
+- **Internal Load Balancer**: HA distribution across zones
+- **Private NAT**: Secure outbound internet access
+- **Tag-Based Firewalls**: Flexible access control
+
+**Deployment:**
+```bash
+cd spoke
+terraform apply -var="deploy_task_3=true"
+```
+
+**Access Workflow:**
+1. RDP to Windows VM using public IP
+2. From Windows VM, access internal load balancer
+3. Load balancer distributes requests to Linux VMs
+4. Each VM serves personalized content
+
+See **[Task 3 Documentation](spoke/modules/task3/README.md)** for detailed instructions.
+
 ---
 
-## Critical Dependencies
+## Screenshots
 
-### Hub Dependencies
-- **Phase 1**: Provides outputs for spoke consumption (`ncc_subnet_cidr`, `ncc_asn`, `ncc_vpn_gateway_id`)
-- **Phase 2**: Requires spoke outputs (`spoke_subnet_cidr`, `spoke_asn`, `spoke_vpn_gateway_id`) from all spoke state files
-- **Phase 3**: Provides `all_spoke_cidrs` output for spoke-to-spoke communication (consumed by spokes)
+### Spoke-to-Spoke Communication
+![Spoke-to-Spoke Connectivity](pics/task1_1.png)
 
-### Spoke Dependencies
-- **Phase 1**: Requires hub outputs (`ncc_subnet_cidr`, `ncc_asn`, `ncc_vpn_gateway_id`)
-- **Phase 2**: Establishes VPN connectivity to hub
-- **Phase 3**: Requires hub's `all_spoke_cidrs` output for spoke-to-spoke communication
-- **Task 2**: Requires Artifact Registry images to be pre-built and pushed
-- **Task 3**: Requires existing spoke VPC and subnet infrastructure
+### Cloud Run Multi-Revision Deployment
+![Cloud Run Service](pics/task2.png)
 
-## Credential Management Best Practices
+#### Traffic Distribution Across Revisions
+| Revision 1 (40%) | Revision 2 (40%) | Revision 3 (10%) | Revision 4 (10%) |
+|:---:|:---:|:---:|:---:|
+| ![Rev 1](pics/revision1.png) | ![Rev 2](pics/revision2.png) | ![Rev 3](pics/revision3.png) | ![Rev 4](pics/revision4.png) |
 
-1. **Secure Storage**: Store service account keys in a secure location outside version control
-2. **Least Privilege**: Assign only necessary permissions to each service account
-3. **Key Rotation**: Regularly rotate service account keys
-4. **Environment Separation**: Use different service accounts for different environments
+### Extended Infrastructure (Task 3)
+| Windows Jump Box | Internal LB Access | Linux VM 1 | Linux VM 2 |
+|:---:|:---:|:---:|:---:|
+| ![Task 3.1](pics/task3_1.png) | ![Task 3.2](pics/task3_2.png) | ![Task 3.3](pics/task3_3.png) | ![Task 3.4](pics/task3_4.png) |
 
-## Dependencies
+---
 
-* **Terraform:** Version `>= 1.0.0` 
-  * `hashicorp/google` provider, version `~> 6.0` (for managing GCP resources)
-  * `hashicorp/random` provider (Hub only), version `~> 3.0` (for generating random IDs)
-  * `hashicorp/null` provider (Task 2), version `~> 3.0` (for local-exec provisioning)
-- **Google Cloud SDK**: Required for interacting with GCP APIs and managing credentials.  
+## Technical Specifications
 
-### GCP Projects:
+### Network Architecture
 
-- A dedicated GCP project for the hub (`ncc_project_id`).  
-- Separate GCP projects for each spoke (`spoke_project_id`).  
+| Component | Specification |
+|-----------|--------------|
+| **Topology** | Hub-and-Spoke with Network Connectivity Center |
+| **Hub VPC** | Regional VPC with custom subnet (10.190.0.0/24) |
+| **Spoke VPCs** | Regional VPCs with custom subnets (10.191.x.0/24) |
+| **VPN Gateways** | HA VPN with dual interfaces (99.99% SLA) |
+| **Routing** | Dynamic BGP (Border Gateway Protocol) |
+| **Encryption** | IKEv2 with AES-256-GCM |
 
-### Service Accounts:
+### Terraform Providers
 
-- **Hub service account** with appropriate roles in hub and spoke projects
-- **Spoke service accounts** with appropriate roles in spoke and hub projects
+```hcl
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
+  }
+}
+```
 
-### GCS Buckets:
+### IAM Requirements
 
-- Hub Terraform state bucket (`walid-hub-backend`)  
-- Spoke Terraform state buckets (`walid-spoke-a-backend`, `walid-spoke-b-backend`)  
-- Shared secrets bucket (`walid-secrets-backend`)  
+#### Hub Service Account
+- `roles/compute.networkAdmin`
+- `roles/networkconnectivity.hubAdmin`
+- `roles/storage.admin`
 
-### Hub-Spoke Dependencies:
+#### Spoke Service Accounts
+- `roles/compute.networkAdmin` (in spoke project)
+- `roles/storage.admin` (in spoke project)
+- `roles/compute.networkUser` (in hub project)
+- `roles/networkconnectivity.spokeAdmin` (in hub project)
 
-- **Spoke Phase 1** requires hub outputs (`ncc_subnet_cidr`, `ncc_asn`, `ncc_vpn_gateway_id`) from hub Phase 1.  
-- **Hub Phase 2** requires spoke outputs (`spoke_subnet_cidr`, `spoke_asn`, `spoke_vpn_gateway_id`) from spoke Phase 1.  
-- **Spoke Phase 2** requires hub outputs from hub Phase 1.  
-- **Spoke Phase 3** requires hub outputs (`all_spoke_cidrs`) from hub Phase 3.
+### GCS Buckets
 
-### Credentials:
-JSON key files for hub and spoke projects.
+| Bucket | Purpose | Access |
+|--------|---------|--------|
+| `walid-hub-backend` | Hub Terraform state | Hub SA (RW), Spoke SAs (R) |
+| `walid-spoke-a-backend` | Spoke A Terraform state | Spoke A SA (RW), Hub SA (R) |
+| `walid-secrets-backend` | Shared VPN secrets | Hub SA (RW), Spoke SAs (R) |
 
-## Input Variables
-### Hub
+### Resource Naming Convention
+
+All resources follow the pattern: `{prefix}-{component}-{identifier}`
+
+Examples:
+- VPC: `walid-ncc-vpc`
+- VPN Gateway: `walid-ncc-vpn-gateway`
+- Router: `walid-spoke-spoke-a-cloud-router`
+
+For detailed deployment instructions, see **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**.
+
+---
+
+## Input Variables Reference
+
+For complete variable documentation, see individual component READMEs:
+- **[Hub Variables](hub/README.md#input-variables)**
+- **[Spoke Variables](spoke/README.md#input-variables)**
+- **[Task 2 Variables](spoke3/modules/task2/README.md#input-variables)**
+- **[Task 3 Variables](spoke/modules/task3/README.md#inputs)**
+
+### Hub Configuration Summary
 | Variable Name | Description | Type | Default Value | Required |
 |---------------|-------------|------|---------------|----------|
 | prefix | Prefix for resource names to ensure uniqueness in the NCC hub project | string | "walid" | Yes |
@@ -558,10 +589,51 @@ If you destroy Phase 1 resources before Phase 2, Terraform will be unable to pro
 
 **Never delete state files before running `terraform destroy`**
 
-## Contributing
-Contributions are welcome! Please follow the existing conventions including lowercase naming, separate `variables.tf` and `outputs.tf`, and input validation.
+---
 
-# Changelog
+## Contributing
+
+Contributions are welcome! If you'd like to improve this project:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow existing conventions:
+   - Use lowercase naming for resources
+   - Maintain separate `variables.tf` and `outputs.tf` files
+   - Add input validation where appropriate
+   - Update documentation for any new features
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+Please ensure your code follows Terraform best practices and includes appropriate documentation.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- Built on top of [Terraform-GCP-NCC-Hub-Spoke-Architecture (v1)](https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture)
+- Utilizes [Google Cloud Network Connectivity Center](https://cloud.google.com/network-connectivity/docs/network-connectivity-center)
+- Terraform providers by [HashiCorp](https://www.terraform.io/)
+
+---
+
+## Support
+
+For questions, issues, or feature requests:
+- Open an issue on [GitHub](https://github.com/Walid-Ahmed-Dev/Terraform-GCP-NCC-Hub-Spoke-Architecture_v2/issues)
+- Review the [Deployment Guide](DEPLOYMENT_GUIDE.md) for troubleshooting
+- Consult the [Architecture Documentation](ARCHITECTURE.md) for technical details
+
+---
+
+## Changelog
 
 ## v3.1.0
 - **Added Task 2 deployment** for Cloud Run multi-revision traffic splitting
