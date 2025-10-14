@@ -23,7 +23,7 @@ This project implements a **Google Cloud Platform (GCP) Network Connectivity Cen
 ---
 
 ## Network Topology
-
+![alt text](pics/NCC-Hub&Spoke1drawio.drawio.png)
 ### High-Level Architecture
 
 ```
