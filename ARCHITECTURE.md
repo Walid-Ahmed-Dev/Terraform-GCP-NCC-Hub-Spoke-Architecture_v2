@@ -28,111 +28,53 @@ This project implements a **Google Cloud Platform (GCP) Network Connectivity Cen
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          GCP Network Connectivity Center                     │
-│                                                                              │
+│                          GCP Network Connectivity Center                    │
+│                                                                             │
 │                      ┌────────────────────────────────┐                     │
 │                      │       NCC Hub Project          │                     │
 │                      │   (ncc-project-467401)         │                     │
-│                      │                                 │                     │
+│                      │                                │                     │
 │                      │  ┌──────────────────────────┐  │                     │
-│                      │  │  NCC Hub VPC              │  │                     │
-│                      │  │  10.190.0.0/24            │  │                     │
-│                      │  │                           │  │                     │
+│                      │  │  NCC Hub VPC             │  │                     │
+│                      │  │  10.190.0.0/24           │  │                     │
+│                      │  │                          │  │                     │
 │                      │  │  ┌────────────────────┐  │  │                     │
 │                      │  │  │  HA VPN Gateway    │  │  │                     │
 │                      │  │  │  (2 interfaces)    │  │  │                     │
 │                      │  │  └────────────────────┘  │  │                     │
-│                      │  │                           │  │                     │
+│                      │  │                          │  │                     │
 │                      │  │  ┌────────────────────┐  │  │                     │
 │                      │  │  │  Cloud Router      │  │  │                     │
 │                      │  │  │  ASN: 64512        │  │  │                     │
 │                      │  │  └────────────────────┘  │  │                     │
 │                      │  └──────────────────────────┘  │                     │
 │                      └────────────────────────────────┘                     │
-│                                                                              │
-│                    ┌──────────────┴───────────────┐                        │
-│                    │                                │                        │
-│          ┌─────────┴──────────┐         ┌─────────┴──────────┐            │
-│          │  IPsec VPN Tunnel  │         │  IPsec VPN Tunnel  │            │
-│          │  (Tunnel 0)        │         │  (Tunnel 1)        │            │
-│          │  BGP Peering       │         │  BGP Peering       │            │
-│          └─────────┬──────────┘         └─────────┬──────────┘            │
-│                    │                                │                        │
-│     ┌──────────────┴─────────────┬─────────────────┴─────────────┐        │
-│     │                             │                                  │        │
-│ ┌───▼──────────────────┐   ┌────▼─────────────────┐   ┌───────────▼────┐ │
-│ │  Spoke A Project     │   │  Spoke B Project     │   │  Spoke C       │ │
-│ │  (pelagic-core)      │   │  (spoke-b-467801)    │   │  Project       │ │
-│ │                      │   │                      │   │                │ │
-│ │  ┌───────────────┐  │   │  ┌───────────────┐  │   │  ┌─────────┐   │ │
-│ │  │ Spoke A VPC   │  │   │  │ Spoke B VPC   │  │   │  │ VPC     │   │ │
-│ │  │ 10.191.1.0/24 │  │   │  │ 10.191.2.0/24 │  │   │  │ 10.x.x.x│   │ │
-│ │  │               │  │   │  │               │  │   │  │         │   │ │
-│ │  │ HA VPN GW     │  │   │  │ HA VPN GW     │  │   │  │ HA VPN  │   │ │
-│ │  │ ASN: 64513    │  │   │  │ ASN: 64514    │  │   │  │         │   │ │
-│ │  └───────────────┘  │   │  └───────────────┘  │   │  └─────────┘   │ │
-│ └─────────────────────┘   └─────────────────────┘   └─────────────────┘ │
-│                                                                              │
+│                                   |                                         │
+│                    ┌──────────────┴───────────────┐                         │
+│                    │                              │                         │
+│          ┌─────────┴──────────┐         ┌─────────┴──────────┐              │
+│          │  IPsec VPN Tunnel  │         │  IPsec VPN Tunnel  │              │
+│          │  (Tunnel 0)        │         │  (Tunnel 1)        │              │
+│          │  BGP Peering       │         │  BGP Peering       │              │
+│          └─────────┬──────────┘         └─────────┬──────────┘              │
+│                    │                              │                         │
+│     ┌──────────────┴─────────────┬────────────────┴──────────────┐          │
+│     │                            │                               │          │
+│ ┌───▼──────────────────┐   ┌─────▼────────────────┐   ┌──────────▼─────┐    │
+│ │  Spoke A Project     │   │  Spoke B Project     │   │  Spoke C       │    │
+│ │  (pelagic-core)      │   │  (spoke-b-467801)    │   │  Project       │    │
+│ │                      │   │                      │   │                │    │
+│ │  ┌───────────────┐   │   │  ┌───────────────┐   │   │  ┌─────────┐   │    │
+│ │  │ Spoke A VPC   │   │   │  │ Spoke B VPC   │   │   │  │ VPC     │   │    │
+│ │  │ 10.191.1.0/24 │   │   │  │ 10.191.2.0/24 │   │   │  │ 10.x.x.x│   │    │
+│ │  │               │   │   │  │               │   │   │  │         │   │    │
+│ │  │ HA VPN GW     |   │   │  │ HA VPN GW     │   │   │  │ HA VPN  │   │    │
+│ │  │ ASN: 64513    │   │   │  │ ASN: 64514    │   │   │  │         │   │    │
+│ │  └───────────────┘   │   │  └───────────────┘   │   │  └─────────┘   │    │
+│ └──────────────────────┘   └──────────────────────┘   └────────────────┘    │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
-
-### Detailed Hub-Spoke Connectivity
-
-```
-                            HUB PROJECT
-                    ┌──────────────────────────┐
-                    │   NCC Hub (us-central1)  │
-                    │                          │
-                    │   ┌──────────────────┐   │
-                    │   │  HA VPN Gateway  │   │
-                    │   │  Interface 0     │───┼────┐
-                    │   │  Interface 1     │───┼────┤
-                    │   └──────────────────┘   │    │
-                    │                          │    │
-                    │   ┌──────────────────┐   │    │
-                    │   │  Cloud Router    │   │    │
-                    │   │  ASN: 64512      │   │    │
-                    │   │  BGP Sessions: 4 │   │    │
-                    │   └──────────────────┘   │    │
-                    └──────────────────────────┘    │
-                                                    │
-        ┌───────────────────────────────────────────┼──────────────┐
-        │                                           │              │
-        │ Tunnel 0                   Tunnel 1       │              │
-        │ 169.254.1.0/30            169.254.2.0/30  │              │
-        │                                           │              │
-    ┌───▼────────────────┐                  ┌──────▼──────────┐  │
-    │  SPOKE A PROJECT   │                  │  SPOKE B PROJECT│  │
-    │  (us-central1)     │                  │  (us-east1)     │  │
-    │                    │                  │                 │  │
-    │  ┌──────────────┐  │                  │  ┌──────────┐  │  │
-    │  │ HA VPN GW    │  │                  │  │ HA VPN GW│  │  │
-    │  │ Interface 0  │──┼──────────────────┼──│ Int 0    │  │  │
-    │  │ Interface 1  │──┼──────────────────┼──│ Int 1    │  │  │
-    │  └──────────────┘  │                  │  └──────────┘  │  │
-    │                    │                  │                 │  │
-    │  ┌──────────────┐  │                  │  ┌──────────┐  │  │
-    │  │Cloud Router  │  │                  │  │Cloud Rtr │  │  │
-    │  │ASN: 64513    │  │                  │  │ASN: 64514│  │  │
-    │  └──────────────┘  │                  │  └──────────┘  │  │
-    └────────────────────┘                  └─────────────────┘  │
-                                                                 │
-                                                                 │
-                            Spoke-to-Spoke Traffic               │
-                            (via Hub BGP routing)                │
-                                                                 │
-                    ┌──────────────────────────┐                │
-                    │  SPOKE C PROJECT         │                │
-                    │  (asia-northeast1)       │                │
-                    │                          │◄───────────────┘
-                    │  ┌────────────────────┐  │
-                    │  │  HA VPN Gateway    │  │
-                    │  │  Cloud Router      │  │
-                    │  │  ASN: 64515        │  │
-                    │  └────────────────────┘  │
-                    └──────────────────────────┘
-```
-
 ---
 
 ## Component Architecture
@@ -141,8 +83,8 @@ This project implements a **Google Cloud Platform (GCP) Network Connectivity Cen
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PHASE 1 DEPLOYMENT                        │
-│                    (Core Infrastructure)                         │
+│                        PHASE 1 DEPLOYMENT                       │
+│                    (Core Infrastructure)                        │
 └─────────────────────────────────────────────────────────────────┘
 
 HUB DEPLOYMENT                          SPOKE DEPLOYMENT
@@ -168,8 +110,8 @@ HUB DEPLOYMENT                          SPOKE DEPLOYMENT
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PHASE 2 DEPLOYMENT                        │
-│                    (VPN Connectivity)                            │
+│                        PHASE 2 DEPLOYMENT                       │
+│                    (VPN Connectivity)                           │
 └─────────────────────────────────────────────────────────────────┘
 
 HUB DEPLOYMENT                          SPOKE DEPLOYMENT
@@ -197,8 +139,8 @@ HUB DEPLOYMENT                          SPOKE DEPLOYMENT
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PHASE 3 DEPLOYMENT                        │
-│                (Spoke-to-Spoke Communication)                    │
+│                        PHASE 3 DEPLOYMENT                       │
+│                (Spoke-to-Spoke Communication)                   │
 └─────────────────────────────────────────────────────────────────┘
 
 HUB DEPLOYMENT                          SPOKE DEPLOYMENT
@@ -215,9 +157,9 @@ HUB DEPLOYMENT                          SPOKE DEPLOYMENT
 └──────────────────────────┘           └──────────────────────────┘
                                                    │
                                                    ▼
-                                        Spoke A ◄──► Spoke B
-                                           ▲           ▲
-                                           └─────┬─────┘
+                                        Spoke A ◄─────► Spoke B
+                                           ▲              ▲
+                                           └─────┬────────┘
                                                  │
                                                  ▼
                                               Spoke C
@@ -345,7 +287,7 @@ Spoke A (10.191.1.0/24) wants to reach Spoke B (10.191.2.0/24)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                       IAM SECURITY MODEL                              │
+│                       IAM SECURITY MODEL                             │
 └──────────────────────────────────────────────────────────────────────┘
 
 HUB PROJECT
@@ -367,7 +309,7 @@ HUB PROJECT
 SPOKE PROJECTS
 ┌────────────────────────────────────────────────────────────────┐
 │ Spoke Service Accounts                                         │
-│ (spoke-a-sa@pelagic-core-467122.iam.gserviceaccount.com)      │
+│ (spoke-a-sa@pelagic-core-467122.iam.gserviceaccount.com)       │
 ├────────────────────────────────────────────────────────────────┤
 │ Roles in Spoke Project:                                        │
 │ - roles/compute.networkAdmin       (VPC, VPN, Firewall mgmt)   │
@@ -384,14 +326,14 @@ SPOKE PROJECTS
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                       FIREWALL RULES HIERARCHY                        │
+│                       FIREWALL RULES HIERARCHY                       │
 └──────────────────────────────────────────────────────────────────────┘
 
 PHASE 1 RULES (Implicit)
 ┌────────────────────────────────────────────────────────────────┐
 │ Default VPC Rules:                                             │
-│ - Deny all ingress by default                                 │
-│ - Allow all egress by default                                 │
+│ - Deny all ingress by default                                  │
+│ - Allow all egress by default                                  │
 └────────────────────────────────────────────────────────────────┘
 
 PHASE 2 RULES (VPN Connectivity)
@@ -412,7 +354,7 @@ PHASE 2 RULES (VPN Connectivity)
 PHASE 3 RULES (Spoke-to-Spoke)
 ┌────────────────────────────────────────────────────────────────┐
 │ Dynamic Spoke Rules:                                           │
-│ - Allow all traffic from all_spoke_cidrs[] (Priority: 1000)   │
+│ - Allow all traffic from all_spoke_cidrs[] (Priority: 1000)    │
 │ - Enables full spoke-to-spoke communication                    │
 │ - Applied to all spoke VPCs                                    │
 └────────────────────────────────────────────────────────────────┘
@@ -434,7 +376,7 @@ TASK 3 RULES (Extended Functionality)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    ENCRYPTION ARCHITECTURE                            │
+│                    ENCRYPTION ARCHITECTURE                           │
 └──────────────────────────────────────────────────────────────────────┘
 
 1. VPN Tunnel Encryption
@@ -482,7 +424,7 @@ TASK 3 RULES (Extended Functionality)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    TERRAFORM STATE ARCHITECTURE                       │
+│                    TERRAFORM STATE ARCHITECTURE                      │
 └──────────────────────────────────────────────────────────────────────┘
 
 GCS BUCKET STRUCTURE
@@ -512,7 +454,7 @@ GCS BUCKET STRUCTURE
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                     STATE DATA DEPENDENCIES                           │
+│                     STATE DATA DEPENDENCIES                          │
 └──────────────────────────────────────────────────────────────────────┘
 
 PHASE 1: Core Infrastructure
@@ -566,7 +508,7 @@ PHASE 3: Spoke-to-Spoke
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    STATE LOCKING MECHANISM                            │
+│                    STATE LOCKING MECHANISM                           │
 └──────────────────────────────────────────────────────────────────────┘
 
 GCS Backend Configuration
@@ -577,7 +519,7 @@ GCS Backend Configuration
 │ }                                                              │
 │                                                                │
 │ Features:                                                      │
-│ - State locking: Prevents concurrent modifications            │
+│ - State locking: Prevents concurrent modifications             │
 │ - Consistency: Read-after-write consistency                    │
 │ - Versioning: Enables state rollback                           │
 │ - Encryption: At-rest encryption by default                    │
@@ -585,12 +527,12 @@ GCS Backend Configuration
 
 State Update Flow
 ┌────────────────────────────────────────────────────────────────┐
-│ 1. Terraform acquires lock on state file                      │
-│ 2. Reads current state from GCS                               │
-│ 3. Plans infrastructure changes                               │
-│ 4. Applies changes to GCP                                     │
-│ 5. Updates state file in GCS                                  │
-│ 6. Releases lock                                              │
+│ 1. Terraform acquires lock on state file                       │
+│ 2. Reads current state from GCS                                │
+│ 3. Plans infrastructure changes                                │
+│ 4. Applies changes to GCP                                      │
+│ 5. Updates state file in GCS                                   │
+│ 6. Releases lock                                               │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -602,7 +544,7 @@ State Update Flow
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│              TASK 2: CLOUD RUN TRAFFIC SPLITTING                      │
+│              TASK 2: CLOUD RUN TRAFFIC SPLITTING                     │
 └──────────────────────────────────────────────────────────────────────┘
 
                       Internet Traffic
@@ -633,13 +575,13 @@ State Update Flow
 
 Deployment Strategy:
 ┌────────────────────────────────────────────────────────────────┐
-│ 1. Terraform creates base service infrastructure              │
-│ 2. gcloud CLI deploys revisions with predictable suffixes:    │
-│    - service-main                                             │
-│    - service-revision2                                        │
-│    - service-revision3                                        │
-│    - service-revision4                                        │
-│ 3. gcloud CLI configures traffic splitting                   │
+│ 1. Terraform creates base service infrastructure               │
+│ 2. gcloud CLI deploys revisions with predictable suffixes:     │
+│    - service-main                                              │
+│    - service-revision2                                         │
+│    - service-revision3                                         │
+│    - service-revision4                                         │
+│ 3. gcloud CLI configures traffic splitting                     │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -694,11 +636,11 @@ Deployment Strategy:
 
 Security Model:
 ┌────────────────────────────────────────────────────────────────┐
-│ - Windows VM: Public RDP access (TCP/3389 from 0.0.0.0/0)     │
-│ - Linux VMs: Private only (no public IPs)                     │
-│ - Windows → Linux: TCP/80 via tag-based firewall              │
-│ - Linux → Internet: Egress via Cloud NAT                      │
-│ - Load Balancer: Internal only (RFC1918 address)              │
+│ - Windows VM: Public RDP access (TCP/3389 from 0.0.0.0/0)      │
+│ - Linux VMs: Private only (no public IPs)                      │
+│ - Windows → Linux: TCP/80 via tag-based firewall               │
+│ - Linux → Internet: Egress via Cloud NAT                       │
+│ - Load Balancer: Internal only (RFC1918 address)               │
 └────────────────────────────────────────────────────────────────┘
 ```
 

@@ -51,17 +51,17 @@ This project implements a **production-grade, scalable network architecture** on
                          Cloud Network Connectivity Center
                                       │
                          ┌────────────┴────────────┐
-                         │      Hub Project         │
-                         │   (Central Management)   │
+                         │      Hub Project        │
+                         │   (Central Management)  │
                          └────────────┬────────────┘
                                       │
-                    ┌─────────────────┼─────────────────┐
-                    │                 │                 │
-              ┌─────▼─────┐     ┌────▼─────┐     ┌────▼─────┐
-              │  Spoke A   │     │ Spoke B  │     │ Spoke C  │
-              │  Project   │     │ Project  │     │ Project  │
-              │            │◄────┤          ├────►│          │
-              └────────────┘     └──────────┘     └──────────┘
+                    ┌─────────────────┼────────────────┐
+                    │                 │                │
+              ┌─────▼─────┐      ┌────▼─────┐     ┌────▼─────┐
+              │  Spoke A  │      │ Spoke B  │     │ Spoke C  │
+              │  Project  │      │ Project  │     │ Project  │
+              │           │◄─────┤          ├────►│          │
+              └───────────┘      └──────────┘     └──────────┘
                    Spoke-to-Spoke Communication (Phase 3)
 ```
 
